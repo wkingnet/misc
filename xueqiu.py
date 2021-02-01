@@ -18,16 +18,14 @@ import pandas as pd
 url_lists = ['ZH2399052',
              'ZH1396883',
              'ZH2398898',
+             'ZH2418586',
+             'ZH2414244',
+             'ZH2372490',
+             'ZH2342455',
+             'ZH2424429',
              'ZH2381174',
              'ZH2381185',
-             'ZH2419229',
-             'ZH2388993',
-             'ZH2017811',
-             'ZH2414192',
-             'ZH2254664',
-             'ZH2414244',
              'ZH2400703',
-             'ZH2418586',
              'ZH1377246',
              'ZH2223562',
              'ZH2346130',
@@ -165,7 +163,7 @@ def read_xueqiu_to_df(url_lists):
         df_url = pd.DataFrame.from_dict(zuhe_dict, orient='index').T
         nowtime = time.strftime("%H:%M:%S", time.localtime())
         df_today = df_today.append(df_url, ignore_index=True)
-        print(f'[{nowtime}] {num + 1}/{len(url_lists)} 已用{str(round(time.time() - starttime, 2))}秒'
+        print(f'[{nowtime}] {num + 1:>2d}/{len(url_lists)} 已用{round(time.time() - starttime, 2):>6.2f}秒'
               f' 组合ID={zuheid}')
     print(df_today)
     return df_today
