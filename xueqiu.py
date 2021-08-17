@@ -2,14 +2,16 @@
 循环读取自定义雪球组合列表的组合名字、日收益、月收益、总收益，保存在DataFrame里。读取列表收益无需登录雪球。
 由于雪球页面显示了日、月、总收益。因此本地不需要建立数据库文件。每日直接读取雪球页面即可获取数据，之后再本地排序加工。
 
+现在使用BBSCODE复制到剪贴板并打开回复网页的方式。使用cookie自动回复帖子的代码理论没问题，但不知为何无法回复。
+
 作者：wking [wking.net]
 """
 
-import os
 import time
 import datetime
 import requests
-import openpyxl
+import pyperclip
+import webbrowser
 from retry import retry
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -18,9 +20,55 @@ import pandas as pd
 url_lists = ['ZH2399052',
              'ZH1396883',
              'ZH2398898',
+             'ZH2907361',
              'ZH2418586',
+             'ZH2186568',
+             'ZH2017811',
+             'ZH2542261',
+             'ZH2580889',
+             'zh2509688',
+             'zh2577477',
+             'ZH2404535',
+             'ZH2463061',
+             'ZH2888245',
+             'ZH2580585',
+             'ZH2403691',
+             'ZH2302821',
+             'ZH2626696',
+             'ZH2626696',
+             'ZH2485134',
+             'zh2862916',
+             'ZH2487283',
+             'zh2414161',
+             'Zh2564526',
+             'ZH2541861',
+             'ZH2406193',
+             'ZH2506934',
+             'ZH2475362',
+             'zh2548709',
+             'ZH2508102',
+             'ZH2457307',
+             'ZH2481474',
+             'ZH2404545',
+             'zh1039525',
+             'ZH2506201',
+             'ZH2506024',
+             'ZH2205763',
+             'ZH2480553',
+             'ZH2423760',
+             'ZH2500190',
+             'zh2447269',
+             'zh2380465',
+             'zh2392428',
+             'ZH2460579',
              'ZH2414244',
              'ZH2372490',
+             'ZH2450588',
+             'ZH2374072',
+             'ZH2278426',
+             'ZH2444269',
+             'ZH2374929',
+             'ZH2376010',
              'ZH2342455',
              'ZH2424429',
              'ZH2381174',
@@ -31,7 +79,6 @@ url_lists = ['ZH2399052',
              'ZH2346130',
              'ZH2408102',
              'ZH2365623',
-             'ZH2403691',
              'ZH2374057',
              'ZH2382196',
              'ZH2303396',
@@ -63,7 +110,6 @@ url_lists = ['ZH2399052',
              'ZH2315177',
              'ZH2254555',
              'ZH2252559',
-             'ZH2246116',
              'ZH2286904',
              'ZH2303543',
              'ZH2276271',
@@ -104,14 +150,23 @@ url_lists = ['ZH2399052',
              'ZH2218858',
              ]
 
+nga_cookies = '12345'
+
 url_base = 'https://xueqiu.com/P/'
-DataFrame_file = 'DataFrame数据库.csv'  # 全量DataFrame数据库保存文件名
-xlsx_file = 'NGA_today.xlsx'  # 每日生成的xlsx文件名
+url_nga = 'https://bbs.nga.cn/post.php'
+# NGA回复帖子的内容字典
+nga_form = {
+    'action': 'reply',  # 回复
+    'fid': 706,  # 板块ID
+    'tid': 23272091,  # 帖子ID
+    # 'post_content': ,  # 帖子内容
+    }
+
 today_date = datetime.date.today()
 header = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                   'Chrome/87.0.4280.141',
-}
+    }
 
 
 # 函数部分
@@ -127,15 +182,15 @@ def getpage(url):
     return response_obj
 
 
-def read_xueqiu_to_df(url_lists):
+def read_xueqiu_to_df(_url_lists):
     """
     循环雪球组合列表获取组合信息，拼凑为DF格式
-    :param url_lists: 雪球组合列表
+    :param _url_lists: 雪球组合列表
     :return: df_today
     """
     df_today = pd.DataFrame()
     starttime = time.time()
-    for num, url_list in enumerate(url_lists):
+    for num, url_list in enumerate(_url_lists):
         url = url_base + url_list
         response_obj = getpage(url)
         zuhe_dict = {}
@@ -145,7 +200,6 @@ def read_xueqiu_to_df(url_lists):
         zuheid = soup_obj.find('span', class_='symbol').get_text()
         username = soup_obj.find('div', class_='name').get_text()
         userid = soup_obj.find('a', class_="creator fn-clear").get('href')
-        zuhe_dict['date'] = today_date
         zuhe_dict['昵称ID'] = userid[1:]
         zuhe_dict['雪球昵称'] = username
         zuhe_dict['组合ID'] = zuheid
@@ -163,36 +217,9 @@ def read_xueqiu_to_df(url_lists):
         df_url = pd.DataFrame.from_dict(zuhe_dict, orient='index').T
         nowtime = time.strftime("%H:%M:%S", time.localtime())
         df_today = df_today.append(df_url, ignore_index=True)
-        print(f'[{nowtime}] {num + 1:>2d}/{len(url_lists)} 已用{round(time.time() - starttime, 2):>6.2f}秒'
+        print(f'[{nowtime}] {num + 1:>2d}/{len(_url_lists)} 已用{round(time.time() - starttime, 2):>6.2f}秒'
               f' 组合ID={zuheid}')
-    print(df_today)
     return df_today
-
-
-# 文件保存
-def file_save_to_csv(DataFrame_file, df_today):
-    """
-    保存到CSV文件
-    :param DataFrame_file: 已有、要被附加DF格式的文件
-    :param df_today:  今日数据，要附加到DataFrame_file的DataFrame对象
-    :return: none
-    """
-    if not os.path.isfile(DataFrame_file):  # 如果本地不存在CSV文件则创建
-        df_today.to_csv(DataFrame_file, encoding='gbk')
-    else:
-        df = pd.read_csv(DataFrame_file, index_col=0, encoding='gbk')
-        df = df.append(df_today, ignore_index=True)
-        df.to_csv(DataFrame_file, encoding='gbk')
-
-
-def file_backup(DataFrame_file):
-    """
-    备份文件另存为“当前年月日-时分秒.csv”格式
-    :param DataFrame_file:
-    :return: none
-    """
-    nowdate = time.strftime("%Y%m%d-%H%M%S", time.localtime())
-    os.popen('copy ' + DataFrame_file + ' ' + DataFrame_file[:-4] + '-' + nowdate + '.csv')
 
 
 def float_to_bbscode(df, column):
@@ -202,16 +229,20 @@ def float_to_bbscode(df, column):
            columns:要转换的列
     :return: 转换过的DataFrame对象
     """
-    df[column] = round(df[column] * 100, 2)
     df[column] = df[column].astype('object')  # 转换为object（字符串）类型
-    for num, value in enumerate(df[column]):
+    for num, _value in enumerate(df[column]):
         if type(df.iat[num, df.columns.get_loc(column)]) == float:
-            if value > 0:
-                df.iat[num, df.columns.get_loc(column)] = "[color=red]" + str(value) + "%[/color]"
+            if _value > 0:
+                df.iat[num, df.columns.get_loc(column)] = "[td][color=red]" + str(
+                    round(_value * 100, 2)) + "%[/color][/td]"
             else:
-                df.iat[num, df.columns.get_loc(column)] = "[color=green]" + str(value) + "%[/color]"
-    df = df.rename(columns={column: '[B]' + column + '[/B]'})  # 列名也添加
+                df.iat[num, df.columns.get_loc(column)] = "[td][color=green]" + str(
+                    round(_value * 100, 2)) + "%[/color][/td]"
+        elif type(df.iat[num, df.columns.get_loc(column)]) == str:
+            df.iat[num, df.columns.get_loc(column)] = "[td]" + str(_value) + "[/td]"
+    # df = df.rename(columns={column: '[td][B]' + column + '[/B][/td]'})  # 列名也添加
     return df
+
 
 def link_to_bbscode(df, cvt_col, link_col):
     """
@@ -229,68 +260,56 @@ def link_to_bbscode(df, cvt_col, link_col):
         if 'ZH' in url_link:  # 如果是组合的链接，改一下URL链接样式
             url_base = url_base + "P/"
         url = url_base + url_link  # 最终形成的URL
-        df.iat[num, df.columns.get_loc(cvt_col)] = "[url=" + url + "]" + str(value) + "[/url]"
+        df.iat[num, df.columns.get_loc(cvt_col)] = "[td][url=" + url + "]" + str(value) + "[/url][/td]"
     return df
 
 
-# 主程序
-#file_backup(DataFrame_file)  # 不需要备份了
+if __name__ == '__main__':
+    # 主程序
 
-#choose = input("输入 y 更新当日数据，其他输入跳过: ")
-if True:
-    # 如果已存在DataFrame_file则删除
-	if os.path.exists(DataFrame_file):
-	    os.remove(DataFrame_file)
-	df_today = read_xueqiu_to_df(url_lists)
-	file_save_to_csv(DataFrame_file, df_today)  # 附加今日数据到数据库文件
-#choose = input("输入 任意键 开始处理当日数据: ")
+    # 读取雪球组合
+    df = read_xueqiu_to_df(url_lists)
 
-# 如果已存在NGA_today.xlsx则删除
-if os.path.exists(xlsx_file):
-    os.remove(xlsx_file)
+    df_sort = pd.DataFrame()
 
-# 创建空白xlsx，只有名字是sheet的一个工作表
-wb = openpyxl.Workbook()
-wb.save(xlsx_file)
+    # 生成收益率排行DF
+    for i in ['日收益', '月收益', '总收益']:
+        df_temp = df.sort_values(by=i, ascending=False)
+        df_temp = float_to_bbscode(df_temp, i)
+        df_temp = float_to_bbscode(df_temp, '雪球昵称')
+        df_temp = link_to_bbscode(df_temp, '组合名', '组合ID')
+        df_temp = df_temp.reset_index(drop=True)
+        df_sort = pd.concat([df_sort, df_temp[['雪球昵称', '组合名', i]]], axis=1, ignore_index=True)
 
-# df.loc[(df['date']=='2021-01-15') & (df['total'] < 1)].sort_values(by=['total'],ascending=False)
-# 常规用法：读取 date列的值为2021-01-15 且 total列的值 <1 的所有行，按total列的值降序排列。
-# 不能用在已把date设置成index的DF上
+    post_content = '[table][tr][td]雪球昵称[/td][td]组合名[/td][td][B]日收益[/B][/td]' \
+                   '[td]雪球昵称[/td][td]组合名[/td][td][B]月收益[/B][/td]' \
+                   '[td]雪球昵称[/td][td]组合名[/td][td][B]总收益[/B][/td][/tr]'
 
-df = pd.read_csv(DataFrame_file, index_col=0, encoding='gbk')
-df['date'] = pd.to_datetime(df['date'])  # 读取文件后date变为字符串类型。重新转换为date类型
-df = df.set_index('date')  # 将 date 设置为index
-# 确保(type(df.index)是pandas.core.indexes.datetimes.DatetimeIndex，即可使用日期直接筛选
-# 获取具体某天的数据，用datafrme直接选取某天时会报错，而series的数据就没有问题 df['2013-11-06']
-# 可以考虑用区间来获取某天的数据 df['2013-11-06':'2013-11-06']
-# df['2021-01-16':'2021-01-16'].sort_values(by=['total'], ascending=False)
+    for row in df_sort.itertuples():
+        post_content += '[tr]'
+        for cell in row[1:]:
+            post_content += cell
+        post_content += '[/tr]'
+    post_content += '[/table]'
 
-# 下面代码段可实现日月总全变色。但为了在论坛醒目查看，不这么处理
-# for for1 in ['day', 'month', 'total']:
-#     df = df[today_date:today_date].sort_values(by=for1, ascending=False)
-#     for for2 in ['day', 'month', 'total']:
-#         df = df_add_bbscodecolor(df, for2)
-#     df.to_csv('NGA_'+for1+'.csv', encoding='gbk', INDEX=False)
-#     print(f'NGA_{for1}.csv 已更新保存')
+    while True:
+        # 复制到系统剪贴板
+        pyperclip.copy(post_content)
 
-# 下面代码段可实现只有排序的列变色
-start_col = 0
-with pd.ExcelWriter(xlsx_file, mode='a') as writer:
-    for for1 in ['日收益', '月收益', '总收益']:
-        df_sort = df[today_date:today_date].sort_values(by=for1, ascending=False)
-        df_sort = float_to_bbscode(df_sort, for1)
-        df_sort = link_to_bbscode(df_sort, '组合名', '组合ID')
-        df_sort = link_to_bbscode(df_sort, '雪球昵称', '昵称ID')
-        df_sort.to_excel(writer, sheet_name='Sheet1', columns=['雪球昵称', '组合名', '[B]' + for1 + '[/B]'],
-                         index=False, startcol=start_col)
-        start_col += 5
-        print(f'{for1} 保存完成')
+        choose = input("BBSCODE已复制到剪贴板，输入r打开回复网页并退出，其他输入再次粘贴:")
+        if choose == "r":
+            webbrowser.open_new_tab("https://bbs.nga.cn/post.php?action=reply&_newui&fid=706&tid=23272091")
+            exit()
 
-# 由于df保存到excel会因为未知问题，自动新建sheet1保存，因此再手动删除空白的sheet
-wb = openpyxl.load_workbook(xlsx_file)
-ws = wb["Sheet"]  # 删除空白的sheet
-wb.remove(ws)
-wb.save(xlsx_file)
+    # 分割构造response可用的cookie
+    cookie = {}
+    for line in nga_cookies.split(';'):
+        name, value = line.strip().split('=', 1)
+        cookie[name] = value
 
-os.popen(xlsx_file)  # 调用系统管道打开今天的xlsx文件
-print('全部完成，自动打开xlsx，程序退出')
+    # 把构造好的帖子内容加入nga_form字典里
+    nga_form['post_content'] = post_content
+
+    # 提交帖子数据
+    response = requests.post(url_nga, data=nga_form, headers=header, cookies=cookie)
+    soup = BeautifulSoup(response.text, 'html.parser')
