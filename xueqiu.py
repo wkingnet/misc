@@ -7,6 +7,7 @@
 作者：wking [wking.net]
 """
 
+import os
 import time
 import datetime
 import requests
@@ -19,9 +20,81 @@ import pandas as pd
 # 要读取的组合ID
 url_lists = ['ZH2399052',
              'ZH1396883',
+             'ZH3038807',
+             'ZH2929995',
+             'Zh2406717',
+             'ZH2935641',
+             'ZH3037601',
+             'ZH1968317',
+             'ZH3025999',
+             'ZH2960097',
+             'ZH3042822',
+             'zh3047416',
+             'zh2478525',
+             'ZH3042896',
+             'ZH3039293',
+             'ZH2557277',
+             'ZH3020950',
+             'ZH3015879',
+             'ZH3048217',
+             'ZH3052724',
+             'ZH2566845',
+             'ZH3023262',
              'ZH2398898',
+             'ZH2955723',
+             'ZH2502283',
+             'ZH2959519',
+             'ZH2987551',
+             'zh2983195',
+             'zh2983216',
+             'zh3020409',
+             'ZH3011707',
+             'ZH2949030',
+             'ZH3012053',
+             'ZH2166377',
+             'ZH2445540',
+             'ZH2230648',
+             'ZH230704',
+             'ZH2984753',
+             'ZH2994410',
+             'ZH2994412',
+             'ZH2986163',
+             'ZH2996011',
+             'ZH2992526',
+             'ZH2995300',
+             'ZH2486226',
+             'ZH2996246',
+             'ZH2468757',
+             'ZH2986444',
+             'ZH2984555',
+             'ZH2981934',
+             'ZH2197289',
+             'ZH2544443',
+             'zh2974996',
+             'ZH2136886',
+             'zh2175182',
+             'ZH298475',
+             'ZH1354911',
+             'zh2974996',
+             'ZH2903729',
+             'zh2957733',
+             'ZH2057191',
+             'zh2069906',
+             'zh1462102',
+             'zh1918571',
+             'zh1247586',
+             'ZH2879408',
+             'ZH1215426',
+             'ZH2873663',
              'ZH2907361',
+             'ZH2929951',
+             'ZH2943575',
+             'ZH293379',
+             'zh1386892',
+             'ZH2505647',
              'ZH2418586',
+             'ZH2923092',
+             'ZH2414210',
              'ZH2186568',
              'ZH2017811',
              'ZH2542261',
@@ -150,7 +223,8 @@ url_lists = ['ZH2399052',
              'ZH2218858',
              ]
 
-nga_cookies = '12345'
+nga_cookie = '12345'
+xueqiu_cookie = '54321'
 
 url_base = 'https://xueqiu.com/P/'
 url_nga = 'https://bbs.nga.cn/post.php'
@@ -158,14 +232,15 @@ url_nga = 'https://bbs.nga.cn/post.php'
 nga_form = {
     'action': 'reply',  # 回复
     'fid': 706,  # 板块ID
-    'tid': 23272091,  # 帖子ID
-    # 'post_content': ,  # 帖子内容
+    'tid': 30081144,  # 帖子ID
+    'nojump': 1,
+    'lite': 'htmljs',
+    'step': 2,
     }
 
 today_date = datetime.date.today()
 header = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
-                  'Chrome/87.0.4280.141',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36',
     }
 
 
@@ -177,7 +252,7 @@ def getpage(url):
     :param url:雪球组合URL
     :return: request.get实例化对象
     """
-    response_obj = requests.get(url, headers=header, timeout=5)  # get方式请求
+    response_obj = requests.get(url, headers=header, timeout=5, cookies=xueqiu_cookie)  # get方式请求
     response_obj.raise_for_status()  # 检测异常方法。如有异常则抛出，触发retry
     return response_obj
 
@@ -233,11 +308,11 @@ def float_to_bbscode(df, column):
     for num, _value in enumerate(df[column]):
         if type(df.iat[num, df.columns.get_loc(column)]) == float:
             if _value > 0:
-                df.iat[num, df.columns.get_loc(column)] = "[td][color=red]" + str(
-                    round(_value * 100, 2)) + "%[/color][/td]"
+                df.iat[num, df.columns.get_loc(column)] = "[td]" + str(
+                    round(_value * 100, 2)) + "%[/td]"
             else:
-                df.iat[num, df.columns.get_loc(column)] = "[td][color=green]" + str(
-                    round(_value * 100, 2)) + "%[/color][/td]"
+                df.iat[num, df.columns.get_loc(column)] = "[td]" + str(
+                    round(_value * 100, 2)) + "%[/td]"
         elif type(df.iat[num, df.columns.get_loc(column)]) == str:
             df.iat[num, df.columns.get_loc(column)] = "[td]" + str(_value) + "[/td]"
     # df = df.rename(columns={column: '[td][B]' + column + '[/B][/td]'})  # 列名也添加
@@ -267,6 +342,16 @@ def link_to_bbscode(df, cvt_col, link_col):
 if __name__ == '__main__':
     # 主程序
 
+    # 测试数据
+    # url_lists = ['ZH2399052', 'ZH1396883', 'ZH3038807', 'ZH2929995', 'Zh2406717', ]
+
+    xueqiu_cookie = {i.split("=")[0]: i.split("=")[1] for i in xueqiu_cookie.split(";")}
+    nga_cookie = {i.split("=")[0]: i.split("=")[1] for i in nga_cookie.split(";")}
+
+    # 如果已存在'bbs_code.txt'则删除
+    if os.path.exists('bbs_code.txt'):
+        os.remove('bbs_code.txt')
+
     # 读取雪球组合
     df = read_xueqiu_to_df(url_lists)
 
@@ -292,24 +377,25 @@ if __name__ == '__main__':
         post_content += '[/tr]'
     post_content += '[/table]'
 
+    """
     while True:
-        # 复制到系统剪贴板
         pyperclip.copy(post_content)
-
         choose = input("BBSCODE已复制到剪贴板，输入r打开回复网页并退出，其他输入再次粘贴:")
         if choose == "r":
-            webbrowser.open_new_tab("https://bbs.nga.cn/post.php?action=reply&_newui&fid=706&tid=23272091")
-            exit()
-
-    # 分割构造response可用的cookie
-    cookie = {}
-    for line in nga_cookies.split(';'):
-        name, value = line.strip().split('=', 1)
-        cookie[name] = value
+            pyperclip.copy(post_content)
+            with open('bbs_code.txt', 'x') as obj_f:
+                obj_f.write(post_content)
+            webbrowser.open_new_tab("https://bbs.nga.cn/post.php?action=reply&_newui&fid=706&tid=" + str(nga_form['tid']))
+            exit()  # 退出程序，不执行后面代码
+    """
 
     # 把构造好的帖子内容加入nga_form字典里
-    nga_form['post_content'] = post_content
+    nga_form['post_content'] = post_content.encode('gbk')
 
     # 提交帖子数据
-    response = requests.post(url_nga, data=nga_form, headers=header, cookies=cookie)
-    soup = BeautifulSoup(response.text, 'html.parser')
+    response = requests.post(url_nga, data=nga_form, headers=header, cookies=nga_cookie)
+    # soup = BeautifulSoup(response.text, 'html.parser')
+
+    # 判断发帖是否成功
+    if '发贴完毕' not in response.text:
+        raise Exception('发帖未成功')
