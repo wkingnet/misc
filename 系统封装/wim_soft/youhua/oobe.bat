@@ -24,15 +24,16 @@ POWERCFG /CHANGE hibernate-timeout-dc 0 >NUL 2>NUL
 @REM 打开小娜
 reg.exe delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v AllowCortana /f
 
+@REM 静默安装7-ZIP
+start /wait %windir%\youhua\7-zip.exe /S
+del /f /q %userprofile%\desktop\7-zip.lnk
+
+
 @REM 微软输入法默认英文
 reg.exe add "HKCU\SOFTWARE\Microsoft\InputMethod\Settings\CHS" /v "Default Mode" /t REG_DWORD /d 00000001 /f
 
 @REM 允许我为每个应用窗口使用不同的输入法  打钩=9e1e078092000000  不打钩=9e1e078012000000  设置立刻生效，但设置面板显示需要重启或注销才更新
 reg.exe add "HKCU\Control Panel\Desktop" /v "UserPreferencesMask" /t REG_BINARY  /d 9e1e078092000000 /f
-
-@REM 静默安装7-ZIP
-start /wait %windir%\youhua\7-zip.exe /S
-del /f /q %userprofile%\desktop\7-zip.lnk
 
 @REM 解压缩驱动精灵到ALL.USER桌面 不内置了
 @REM start /wait %windir%\youhua\7z.exe x %~dp0Drivergenius.zip -o%PUBLIC%\Desktop
@@ -40,9 +41,5 @@ del /f /q %userprofile%\desktop\7-zip.lnk
 @REM 解压缩WindowsDefender.zip 不内置了
 @REM "%ProgramFiles%\7-zip\7z.exe" x %~dp0WindowsDefender.zip -o%PUBLIC%\Desktop
 
-@REM 再次导入HKCU一次
-reg.exe import %windir%\youhua\HKCU.reg
-
-@REM 清理
-del /f /q %windir%\panther\unattend.xml
-rd /s /q %windir%\youhua
+copy %windir%\youhua\StartUp.bat "%ProgramData%\Microsoft\Windows\Start Menu\Programs\StartUp\StartUp.bat"
+shutdown /r /f /t 0
