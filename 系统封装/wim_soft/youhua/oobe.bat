@@ -1,4 +1,4 @@
-@REM 作者: wking [http://blog.wkings.net/archives/550]
+@REM 作者: wking [http://wkings.blog]
 
 @REM 计划任务程序
 @REM 禁用-磁盘碎片整理计划
@@ -28,6 +28,8 @@ reg.exe delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v Allo
 start /wait %windir%\youhua\7-zip.exe /S
 del /f /q %userprofile%\desktop\7-zip.lnk
 
+@REM 再次导入HKCU一次
+reg.exe import %windir%\youhua\HKCU.reg
 
 @REM 微软输入法默认英文
 reg.exe add "HKCU\SOFTWARE\Microsoft\InputMethod\Settings\CHS" /v "Default Mode" /t REG_DWORD /d 00000001 /f
@@ -41,5 +43,7 @@ reg.exe add "HKCU\Control Panel\Desktop" /v "UserPreferencesMask" /t REG_BINARY 
 @REM 解压缩WindowsDefender.zip 不内置了
 @REM "%ProgramFiles%\7-zip\7z.exe" x %~dp0WindowsDefender.zip -o%PUBLIC%\Desktop
 
-copy %windir%\youhua\StartUp.bat "%ProgramData%\Microsoft\Windows\Start Menu\Programs\StartUp\StartUp.bat"
-shutdown /r /f /t 0
+@REM 添加StartUp.bat到注册表自启，进桌面后执行。OOBE阶段部分修改不生效
+copy %windir%\youhua\StartUp.bat %windir%\system32 /y
+reg add HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce /v 1 /t reg_sz /d "StartUp.bat" /f
+exit
