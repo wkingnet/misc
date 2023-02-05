@@ -3,5 +3,5 @@
 * 合集制作.bat。制作windows系统安装镜像批处理。
 
 ## 作者
-
+作者：wking
 博客：https://wkings.blog
