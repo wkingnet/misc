@@ -24,7 +24,7 @@ setlocal enabledelayedexpansion
 cls
 echo 环境检查...
 IF NOT DEFINED WIM_FILE echo WIM_FILE变量设置错误，脚本退出 & PAUSE & EXIT
-IF NOT DEFINED WIMDIR echo WIMDIR变量设置错误，脚本退出 & PAUSE & EXIT
+IF NOT DEFINED WIM_DIR echo WIMDIR变量设置错误，脚本退出 & PAUSE & EXIT
 IF NOT DEFINED WIN_VER echo WIN_VER变量设置错误，脚本退出 & PAUSE & EXIT
 IF EXIST %WIM_DISK%\install_backup.wim echo 确认install_backup.wim备份文件无用并手动删除后 & PAUSE
 cls
