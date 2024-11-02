@@ -8,7 +8,6 @@
 @SET WIM_FILE=h:\install.wim
 @SET WIM_DIR=h:\wim
 @SET WIM_NUM=10
-@SET WIN_VER=Education Professional ProfessionalEducation ProfessionalWorkstation Enterprise IoTEnterprise
 @SET YOUHUA_DIR=h:\wim_soft\youhua
 @SET UNATTEND=h:\wim_soft\panther\unattend.xml
 @SET UNATTEND_ADMIN=h:\wim_soft\panther\unattend_admin.xml
@@ -23,7 +22,6 @@ cls
 echo 环境检查...
 IF NOT DEFINED WIM_FILE echo WIM_FILE变量设置错误，脚本退出 & PAUSE & EXIT
 IF NOT DEFINED WIM_DIR echo WIM_DIR变量设置错误，脚本退出 & PAUSE & EXIT
-IF NOT DEFINED WIN_VER echo WIN_VER变量设置错误，脚本退出 & PAUSE & EXIT
 IF NOT DEFINED UNATTEND echo UNATTEND变量设置错误，脚本退出 & PAUSE & EXIT
 IF EXIST %WIM_DISK%\install_backup.wim echo 确认install_backup.wim备份文件无用并手动删除后 & PAUSE
 REM IF EXIST %WIM_DIR%\windows echo wim释放目录%WIM_DIR%没有清空，手动清空后重新运行脚本 & PAUSE & EXIT
